@@ -193,7 +193,8 @@
   .complete-title{ font-family:'Fraunces', serif; font-size:28px; font-weight:600; margin:0 0 6px; }
   .complete-level{ color:var(--gold); font-size:13px; letter-spacing:2px; text-transform:uppercase; margin-bottom:26px; }
   .final-score{ font-family:'Fraunces', serif; font-size:56px; font-weight:700; color:var(--gold-bright); line-height:1; }
-  .final-score-label{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:26px; }
+  .final-score-label{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .best-indicator{ font-size:12px; line-height:1; letter-spacing:1px; text-transform:uppercase; color:var(--gold-bright); margin:0 0 8px; }
   .stat-row{ display:flex; gap:28px; margin-bottom:34px; }
   .stat-row .stat-value{ font-size:20px; }
 
@@ -295,6 +296,7 @@
       <h2 class="complete-title">Round Sealed</h2>
       <div class="final-score" id="final-score">0</div>
       <div class="final-score-label">Total Points</div>
+      <p class="best-indicator" id="best-indicator"></p>
       <div class="stat-row">
         <div class="stat">
           <div class="stat-label">Accuracy</div>
@@ -665,7 +667,8 @@
     const levelKey = state.level.key;
     const acc = state.level.total > 0 ? Math.round((state.correctCount / state.level.total) * 100) : 0;
 
-    if(state.score > stats[levelKey].bestScore){
+    const isNewBest = state.score > stats[levelKey].bestScore;
+    if(isNewBest){
       stats[levelKey].bestScore = state.score;
     }
     stats[levelKey].lastSession = {
@@ -680,6 +683,9 @@
     document.getElementById("final-score").textContent = state.score;
     document.getElementById("final-accuracy").textContent = acc + "%";
     document.getElementById("final-streak").textContent = state.bestStreak;
+    document.getElementById("best-indicator").textContent = isNewBest
+      ? "New Best!"
+      : ("Best: " + stats[levelKey].bestScore.toLocaleString() + " pts");
     showScreen("complete");
   }
 
