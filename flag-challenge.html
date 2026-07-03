@@ -142,7 +142,7 @@
   .flag-inner{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
-  .flag-emoji{ font-size:88px; line-height:1; filter:drop-shadow(0 6px 14px rgba(0,0,0,0.45)); }
+  .flag-emoji{ width:160px; height:auto; display:block; border-radius:6px; filter:drop-shadow(0 6px 14px rgba(0,0,0,0.45)); }
   .points-live{
     margin-top:8px; font-family:'Fraunces', serif; font-size:15px; color:var(--gold-bright); letter-spacing:0.5px;
   }
@@ -273,7 +273,7 @@
           <circle class="ring-fill-circle" id="ring-fill" cx="60" cy="60" r="54" stroke-dasharray="339.3" stroke-dashoffset="0"></circle>
         </svg>
         <div class="flag-inner">
-          <div class="flag-emoji" id="flag-emoji">🏳️</div>
+          <img class="flag-emoji" id="flag-emoji" alt="Country flag" src="">
           <div class="points-live" id="points-live">20 pts</div>
         </div>
       </div>
@@ -363,8 +363,8 @@
     ["VN","Vietnam",21.0,105.8],["YE","Yemen",15.4,44.2],["ZM","Zambia",-15.4,28.3],["ZW","Zimbabwe",-17.8,31.05]
   ];
 
-  function flagEmoji(code){
-    return code.toUpperCase().replace(/./g, c => String.fromCodePoint(c.charCodeAt(0) + 127397));
+  function flagImageUrl(code){
+    return "https://flagcdn.com/" + code.toLowerCase() + ".svg";
   }
 
   /* ---------------- Geography helpers ---------------- */
@@ -582,7 +582,7 @@
     state.idx += 1;
     state.locked = false;
 
-    flagEmojiEl.textContent = flagEmoji(state.current.code);
+    flagEmojiEl.src = flagImageUrl(state.current.code);
     progressValue.textContent = (state.answered + 1) + "/" + state.level.total;
     progressFill.style.width = ((state.answered) / state.level.total * 100) + "%";
 
