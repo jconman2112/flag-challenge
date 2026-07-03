@@ -56,6 +56,13 @@
     mask-image: radial-gradient(circle at 50% 15%, black 0%, transparent 65%);
   }
 
+  /* ---------- Persistent credit ---------- */
+  .credit{
+    position:fixed; left:0; right:0; bottom:6px; text-align:center;
+    font-size:10px; letter-spacing:1px; color:var(--muted); opacity:0.6;
+    pointer-events:none; z-index:10;
+  }
+
   /* ---------- Start screen ---------- */
   .brand-eyebrow{
     font-size:12px; letter-spacing:4px; text-transform:uppercase;
@@ -311,6 +318,8 @@
     <button class="btn btn-primary" id="btn-replay">Play This Level Again</button>
     <button class="btn btn-secondary" id="btn-choose">Choose Another Level</button>
   </section>
+
+  <div class="credit">Designed by JAllappenos</div>
 
 </div>
 
