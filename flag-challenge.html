@@ -410,6 +410,44 @@
     return 5;
   }
 
+  /* ---------------- Local stats persistence ---------------- */
+  const STATS_KEY = "flagChallengeStats";
+
+  function defaultStats(){
+    return {
+      easy:   { bestScore: 0, lastSession: null },
+      medium: { bestScore: 0, lastSession: null },
+      hard:   { bestScore: 0, lastSession: null }
+    };
+  }
+
+  function loadStats(){
+    try{
+      const raw = localStorage.getItem(STATS_KEY);
+      if(!raw) return defaultStats();
+      const parsed = JSON.parse(raw);
+      const stats = defaultStats();
+      for(const key of Object.keys(stats)){
+        if(parsed && parsed[key]){
+          if(typeof parsed[key].bestScore === "number") stats[key].bestScore = parsed[key].bestScore;
+          if(parsed[key].lastSession) stats[key].lastSession = parsed[key].lastSession;
+        }
+      }
+      return stats;
+    } catch(e){
+      return defaultStats();
+    }
+  }
+
+  function saveStats(stats){
+    try{
+      localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    } catch(e){
+      // localStorage unavailable (private browsing, quota, etc.) — game
+      // continues with in-memory-only stats for this session.
+    }
+  }
+
   /* ---------------- Game state ---------------- */
   const state = {
     level: null,        // {key, label, total}
@@ -426,6 +464,8 @@
     current: null,       // {code, name, options:[...]}
     locked: false
   };
+
+  let stats = loadStats();
 
   function shuffle(arr){
     const a = arr.slice();
@@ -610,9 +650,22 @@
 
   function finishLevel(){
     clearInterval(state.timerHandle);
+    const levelKey = state.level.key;
+    const acc = state.level.total > 0 ? Math.round((state.correctCount / state.level.total) * 100) : 0;
+
+    if(state.score > stats[levelKey].bestScore){
+      stats[levelKey].bestScore = state.score;
+    }
+    stats[levelKey].lastSession = {
+      score: state.score,
+      accuracy: acc,
+      streak: state.bestStreak,
+      date: new Date().toISOString()
+    };
+    saveStats(stats);
+
     document.getElementById("complete-level-name").textContent = state.level.label + " · Complete";
     document.getElementById("final-score").textContent = state.score;
-    const acc = state.level.total > 0 ? Math.round((state.correctCount / state.level.total) * 100) : 0;
     document.getElementById("final-accuracy").textContent = acc + "%";
     document.getElementById("final-streak").textContent = state.bestStreak;
     showScreen("complete");
