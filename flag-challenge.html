@@ -6,6 +6,7 @@
 <title>The Flag Challenge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg: #0d1226;
@@ -59,7 +60,7 @@
   /* ---------- Persistent credit ---------- */
   .credit{
     position:fixed; left:0; right:0; bottom:6px; text-align:center;
-    font-size:10px; letter-spacing:1px; color:var(--muted); opacity:0.6;
+    font-size:10px; letter-spacing:1px; color:var(--gold); opacity:0.6;
     pointer-events:none; z-index:10;
   }
 
@@ -212,6 +213,53 @@
   .btn-primary{ background:linear-gradient(90deg, var(--gold), var(--gold-bright)); color:#1a1206; margin-bottom:10px; }
   .btn-secondary{ background:transparent; border:1px solid #2a335c; color:var(--parchment); }
   .btn:active{ transform:scale(0.98); }
+
+  /* ---------- Cloud account (Tier 2) ---------- */
+  .account-links{ display:flex; justify-content:center; gap:18px; margin-top:18px; }
+  .account-links button{
+    background:none; border:none; color:var(--muted); font-size:12px;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer; font-family:'Space Grotesk', sans-serif;
+  }
+  .account-links button:hover{ color:var(--gold); }
+  .back-link{ align-self:flex-start; margin-bottom:6px; }
+
+  .field{ margin-bottom:14px; }
+  .field label{
+    display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:6px;
+  }
+  .field input{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid #2a335c;
+    background:var(--surface); color:var(--parchment); font-family:'Space Grotesk', sans-serif; font-size:14px;
+  }
+  .field input:focus{ outline:none; border-color:var(--gold); }
+  .form-error{ color:var(--bad); font-size:12.5px; margin:-4px 0 14px; min-height:1em; }
+  .form-note{ color:var(--muted); font-size:12px; text-align:center; margin-top:14px; }
+  .link-btn{
+    color:var(--gold); cursor:pointer; text-decoration:underline; background:none;
+    border:none; font:inherit; padding:0;
+  }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:16px; }
+  .tab-btn{
+    flex:1; padding:10px; border-radius:10px; border:1px solid #2a335c; background:var(--surface);
+    color:var(--muted); font-size:12px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    font-family:'Space Grotesk', sans-serif;
+  }
+  .tab-btn.active{ border-color:var(--gold); color:var(--gold); background:var(--surface2); }
+
+  .board-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+  .board-row{
+    display:flex; justify-content:space-between; align-items:center; padding:10px 14px;
+    background:var(--surface); border-radius:10px; border:1px solid #2a335c; font-size:13.5px;
+  }
+  .board-row .rank{ color:var(--gold); font-family:'Fraunces', serif; font-weight:600; width:24px; }
+  .board-row .uname{ flex:1; padding:0 10px; }
+  .board-row .bscore{ color:var(--gold-bright); font-weight:600; }
+  .board-empty{ text-align:center; color:var(--muted); font-size:13px; padding:20px 0; }
+
+  .profile-level-group{ margin-bottom:14px; }
+  .profile-level-group h4{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin:0 0 8px; }
 </style>
 </head>
 <body>
@@ -249,6 +297,10 @@
         </div>
         <div class="level-stamp">III</div>
       </div>
+    </div>
+    <div class="account-links">
+      <button type="button" id="btn-view-leaderboard">Leaderboard</button>
+      <button type="button" id="btn-account">Account</button>
     </div>
     <p class="footnote">Every flag appears at most once per round.<br>Answer fast for more points — a wrong guess resets your streak, not the run.</p>
   </section>
@@ -317,6 +369,110 @@
     </div>
     <button class="btn btn-primary" id="btn-replay">Play This Level Again</button>
     <button class="btn btn-secondary" id="btn-choose">Choose Another Level</button>
+  </section>
+
+  <!-- LOGIN SCREEN -->
+  <section class="screen" id="screen-login">
+    <button class="restart-link back-link" type="button" data-back>&#8592; Back</button>
+    <h2 class="complete-title" style="text-align:center;margin:18px 0 26px;">Sign In</h2>
+    <form id="form-login">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" autocomplete="current-password" required>
+      </div>
+      <p class="form-error" id="login-error"></p>
+      <button class="btn btn-primary" type="submit">Sign In</button>
+    </form>
+    <p class="form-note">New here? <button class="link-btn" type="button" id="btn-goto-register">Create an account</button></p>
+  </section>
+
+  <!-- REGISTER SCREEN -->
+  <section class="screen" id="screen-register">
+    <button class="restart-link back-link" type="button" data-back>&#8592; Back</button>
+    <h2 class="complete-title" style="text-align:center;margin:18px 0 26px;">Create Account</h2>
+    <form id="form-register">
+      <div class="field">
+        <label for="register-username">Username</label>
+        <input type="text" id="register-username" minlength="3" maxlength="20" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="register-email">Email</label>
+        <input type="email" id="register-email" autocomplete="email" required>
+      </div>
+      <div class="field">
+        <label for="register-password">Password</label>
+        <input type="password" id="register-password" minlength="6" autocomplete="new-password" required>
+      </div>
+      <p class="form-error" id="register-error"></p>
+      <button class="btn btn-primary" type="submit">Create Account</button>
+    </form>
+    <p class="form-note">Already registered? <button class="link-btn" type="button" id="btn-goto-login">Sign in</button></p>
+  </section>
+
+  <!-- PAYWALL SCREEN -->
+  <section class="screen" id="screen-paywall">
+    <button class="restart-link back-link" type="button" data-back>&#8592; Back</button>
+    <div class="complete-wrap">
+      <div class="seal"><div class="seal-mark">🔓</div></div>
+      <h2 class="complete-title">Unlock Cloud Sync</h2>
+      <p class="subtitle" style="margin-bottom:26px;">Save your scores across devices and join the leaderboard — a one-time $1 unlock.</p>
+      <!-- TODO(Phase 3/4): wire this up to Google Play Billing (Play Store build)
+           or Stripe Checkout (sideload build). On success, flip profiles.paid
+           to true server-side (never from the client) and route to screen-profile. -->
+      <button class="btn btn-primary" id="btn-purchase" disabled>Unlock — $1 (Coming Soon)</button>
+      <button class="btn btn-secondary" id="btn-paywall-signout" type="button">Sign Out</button>
+    </div>
+  </section>
+
+  <!-- PROFILE SCREEN -->
+  <section class="screen" id="screen-profile">
+    <button class="restart-link back-link" type="button" data-back>&#8592; Back</button>
+    <h2 class="complete-title" style="text-align:center;margin:18px 0 4px;" id="profile-username-label">Player</h2>
+    <p class="subtitle" style="margin-bottom:22px;">Your personal best scores, all-time.</p>
+    <div class="profile-scores" id="profile-scores"></div>
+
+    <form id="form-profile-username">
+      <div class="field">
+        <label for="profile-username-input">Change Username</label>
+        <input type="text" id="profile-username-input" minlength="3" maxlength="20" placeholder="New username">
+      </div>
+      <p class="form-error" id="profile-username-error"></p>
+      <button class="btn btn-secondary" type="submit">Update Username</button>
+    </form>
+
+    <form id="form-profile-password" style="margin-top:18px;">
+      <div class="field">
+        <label for="profile-password-input">Change Password</label>
+        <input type="password" id="profile-password-input" minlength="6" placeholder="New password" autocomplete="new-password">
+      </div>
+      <p class="form-error" id="profile-password-error"></p>
+      <button class="btn btn-secondary" type="submit">Update Password</button>
+    </form>
+
+    <div class="account-links">
+      <button type="button" id="btn-profile-leaderboard">Leaderboard</button>
+      <button type="button" id="btn-profile-signout">Sign Out</button>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD SCREEN -->
+  <section class="screen" id="screen-leaderboard">
+    <button class="restart-link back-link" type="button" data-back>&#8592; Back</button>
+    <h2 class="complete-title" style="text-align:center;margin:18px 0 18px;">Leaderboard</h2>
+    <div class="tabs" id="leaderboard-level-tabs">
+      <button class="tab-btn active" data-level="easy" type="button">Easy</button>
+      <button class="tab-btn" data-level="medium" type="button">Medium</button>
+      <button class="tab-btn" data-level="hard" type="button">Hard</button>
+    </div>
+    <div class="tabs" id="leaderboard-board-tabs">
+      <button class="tab-btn active" data-board="monthly" type="button">Monthly Top 10</button>
+      <button class="tab-btn" data-board="alltime" type="button">All-Time Top 50</button>
+    </div>
+    <div class="board-list" id="leaderboard-list"></div>
   </section>
 
   <div class="credit">Designed by JAllappenos</div>
@@ -501,7 +657,12 @@
   const screens = {
     start: document.getElementById("screen-start"),
     game: document.getElementById("screen-game"),
-    complete: document.getElementById("screen-complete")
+    complete: document.getElementById("screen-complete"),
+    login: document.getElementById("screen-login"),
+    register: document.getElementById("screen-register"),
+    paywall: document.getElementById("screen-paywall"),
+    profile: document.getElementById("screen-profile"),
+    leaderboard: document.getElementById("screen-leaderboard")
   };
   const scoreValue = document.getElementById("score-value");
   const streakValue = document.getElementById("streak-value");
@@ -528,6 +689,241 @@
       card.querySelector(".level-best").textContent = best > 0 ? ("Best: " + best.toLocaleString() + " pts") : "";
     });
   }
+
+  /* ---------------- Cloud account (Tier 2) ---------------- */
+  const SUPABASE_URL = "https://ltzyzgnnmyinzvystxki.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_rf-8BEWMAgLvTIVJ92Wa8w_E6d9FR_r";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const SYNCED_KEY = "flagChallengeSynced";
+  // TEMP: billing (Phase 3/4) isn't built yet, so the paywall would block
+  // everyone including beta testers. Flip to false once purchase is wired
+  // up -- also revert the matching scores_insert_own_paid RLS policy.
+  const BETA_MODE = true;
+
+  let session = null;   // current Supabase auth session, or null when signed out
+  let profile = null;   // { id, username, paid } for the signed-in user
+
+  const loginForm = document.getElementById("form-login");
+  const loginEmailInput = document.getElementById("login-email");
+  const loginPasswordInput = document.getElementById("login-password");
+  const loginError = document.getElementById("login-error");
+
+  const registerForm = document.getElementById("form-register");
+  const registerUsernameInput = document.getElementById("register-username");
+  const registerEmailInput = document.getElementById("register-email");
+  const registerPasswordInput = document.getElementById("register-password");
+  const registerError = document.getElementById("register-error");
+
+  const profileUsernameLabel = document.getElementById("profile-username-label");
+  const profileScoresEl = document.getElementById("profile-scores");
+  const usernameForm = document.getElementById("form-profile-username");
+  const usernameInput = document.getElementById("profile-username-input");
+  const usernameError = document.getElementById("profile-username-error");
+  const passwordForm = document.getElementById("form-profile-password");
+  const passwordInput = document.getElementById("profile-password-input");
+  const passwordError = document.getElementById("profile-password-error");
+
+  const leaderboardListEl = document.getElementById("leaderboard-list");
+  let leaderboardLevel = "easy";
+  let leaderboardBoard = "monthly";
+
+  function setFieldError(el, message){
+    el.textContent = message || "";
+  }
+
+  async function refreshProfile(){
+    if(!session){ profile = null; return; }
+    const { data, error } = await sb
+      .from("profiles")
+      .select("id,username,paid")
+      .eq("id", session.user.id)
+      .single();
+    profile = error ? null : data;
+  }
+
+  async function importLocalScoresToCloud(){
+    const rows = Object.keys(stats)
+      .filter(key => stats[key].bestScore > 0)
+      .map(key => ({ user_id: session.user.id, level: key, score: stats[key].bestScore }));
+    if(rows.length === 0) return;
+    await sb.from("scores").insert(rows);
+  }
+
+  async function maybeImportLocalScores(){
+    if(!session || !profile || (!profile.paid && !BETA_MODE)) return;
+    if(localStorage.getItem(SYNCED_KEY)) return;
+    await importLocalScoresToCloud();
+    try{ localStorage.setItem(SYNCED_KEY, "1"); } catch(e){}
+  }
+
+  function routeToAccountScreen(){
+    if(!session){
+      showScreen("login");
+    } else if(!profile || (!profile.paid && !BETA_MODE)){
+      showScreen("paywall");
+    } else {
+      showProfileScreen();
+    }
+  }
+
+  async function showProfileScreen(){
+    profileUsernameLabel.textContent = profile.username;
+    showScreen("profile");
+    await maybeImportLocalScores();
+    await loadPersonalBests();
+  }
+
+  async function loadPersonalBests(){
+    profileScoresEl.innerHTML = "<p class=\"board-empty\">Loading…</p>";
+    const { data, error } = await sb
+      .from("scores")
+      .select("level,score")
+      .eq("user_id", session.user.id)
+      .order("score", { ascending: false });
+    if(error){
+      profileScoresEl.innerHTML = "<p class=\"board-empty\">Couldn't load scores.</p>";
+      return;
+    }
+    profileScoresEl.innerHTML = "";
+    Object.keys(LEVELS).forEach(key => {
+      const top5 = data.filter(row => row.level === key).slice(0, 5);
+      const rowsHtml = top5.length
+        ? top5.map(row => "<div class=\"board-row\"><span class=\"uname\">" + row.score.toLocaleString() + " pts</span></div>").join("")
+        : "<p class=\"board-empty\">No cloud scores yet.</p>";
+      const group = document.createElement("div");
+      group.className = "profile-level-group";
+      group.innerHTML = "<h4>" + LEVELS[key].label + "</h4>" + rowsHtml;
+      profileScoresEl.appendChild(group);
+    });
+  }
+
+  async function renderLeaderboard(){
+    leaderboardListEl.innerHTML = "<p class=\"board-empty\">Loading…</p>";
+    const table = leaderboardBoard === "monthly" ? "monthly_leaderboard" : "alltime_leaderboard";
+    const { data, error } = await sb
+      .from(table)
+      .select("username,best_score,rnk")
+      .eq("level", leaderboardLevel)
+      .order("rnk", { ascending: true });
+    if(error){
+      leaderboardListEl.innerHTML = "<p class=\"board-empty\">Couldn't load leaderboard.</p>";
+      return;
+    }
+    if(!data || data.length === 0){
+      leaderboardListEl.innerHTML = "<p class=\"board-empty\">No scores yet — be the first!</p>";
+      return;
+    }
+    leaderboardListEl.innerHTML = data.map(row =>
+      "<div class=\"board-row\"><span class=\"rank\">" + row.rnk + "</span><span class=\"uname\">" + row.username + "</span><span class=\"bscore\">" + row.best_score.toLocaleString() + "</span></div>"
+    ).join("");
+  }
+
+  async function handleSignOut(){
+    await sb.auth.signOut();
+    session = null;
+    profile = null;
+    showScreen("start");
+  }
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setFieldError(loginError, "");
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: loginEmailInput.value.trim(),
+      password: loginPasswordInput.value
+    });
+    if(error){ setFieldError(loginError, error.message); return; }
+    session = data.session;
+    await refreshProfile();
+    routeToAccountScreen();
+  });
+
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setFieldError(registerError, "");
+    const { data, error } = await sb.auth.signUp({
+      email: registerEmailInput.value.trim(),
+      password: registerPasswordInput.value,
+      options: { data: { username: registerUsernameInput.value.trim() } }
+    });
+    if(error){ setFieldError(registerError, error.message); return; }
+    session = data.session;
+    if(!session){
+      setFieldError(registerError, "Check your email to confirm your account, then sign in.");
+      showScreen("login");
+      return;
+    }
+    await refreshProfile();
+    routeToAccountScreen();
+  });
+
+  usernameForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setFieldError(usernameError, "");
+    const newUsername = usernameInput.value.trim();
+    if(newUsername.length < 3 || newUsername.length > 20){
+      setFieldError(usernameError, "Username must be 3-20 characters.");
+      return;
+    }
+    const { error } = await sb.from("profiles").update({ username: newUsername }).eq("id", session.user.id);
+    if(error){ setFieldError(usernameError, error.message); return; }
+    profile.username = newUsername;
+    profileUsernameLabel.textContent = newUsername;
+    usernameInput.value = "";
+  });
+
+  passwordForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setFieldError(passwordError, "");
+    if(passwordInput.value.length < 6){
+      setFieldError(passwordError, "Password must be at least 6 characters.");
+      return;
+    }
+    const { error } = await sb.auth.updateUser({ password: passwordInput.value });
+    if(error){ setFieldError(passwordError, error.message); return; }
+    passwordInput.value = "";
+    setFieldError(passwordError, "Password updated.");
+  });
+
+  document.getElementById("btn-account").addEventListener("click", routeToAccountScreen);
+  document.getElementById("btn-view-leaderboard").addEventListener("click", () => {
+    showScreen("leaderboard");
+    renderLeaderboard();
+  });
+  document.getElementById("btn-profile-leaderboard").addEventListener("click", () => {
+    showScreen("leaderboard");
+    renderLeaderboard();
+  });
+  document.getElementById("btn-goto-register").addEventListener("click", () => showScreen("register"));
+  document.getElementById("btn-goto-login").addEventListener("click", () => showScreen("login"));
+  document.getElementById("btn-paywall-signout").addEventListener("click", handleSignOut);
+  document.getElementById("btn-profile-signout").addEventListener("click", handleSignOut);
+  document.querySelectorAll("[data-back]").forEach(btn => {
+    btn.addEventListener("click", () => showScreen("start"));
+  });
+
+  document.querySelectorAll("#leaderboard-level-tabs .tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      leaderboardLevel = btn.dataset.level;
+      document.querySelectorAll("#leaderboard-level-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderLeaderboard();
+    });
+  });
+  document.querySelectorAll("#leaderboard-board-tabs .tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      leaderboardBoard = btn.dataset.board;
+      document.querySelectorAll("#leaderboard-board-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderLeaderboard();
+    });
+  });
+
+  (async function initAuth(){
+    const { data } = await sb.auth.getSession();
+    session = data.session;
+    if(session) await refreshProfile();
+  })();
 
   /* ---------------- Level start ---------------- */
   function startLevel(levelKey){
@@ -687,6 +1083,12 @@
       date: new Date().toISOString()
     };
     saveStats(stats);
+
+    if(session && profile && (profile.paid || BETA_MODE)){
+      sb.from("scores").insert({ user_id: session.user.id, level: levelKey, score: state.score }).then(({ error }) => {
+        if(error) console.error("cloud score sync failed:", error.message);
+      });
+    }
 
     document.getElementById("complete-level-name").textContent = state.level.label + " · Complete";
     document.getElementById("final-score").textContent = state.score;
